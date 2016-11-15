@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="http://www.javeriana.com.co/recaudos"
+	elementFormDefault="qualified" xmlns="http://www.w3.org/2001/XMLSchema" 
+	xmlns:tns="http://www.javeriana.com.co/recaudos">
+	
+	
+	<element name="realizarRecaudo" type="tns:RealizarRecaudo"></element>
+	<complexType name="RealizarRecaudo">
+		<sequence>
+    		<element name="idCliente" type="tns:usuario" minOccurs="1" maxOccurs="1"/>
+			<element name="numeroConvenio"  type="string" minOccurs="1" maxOccurs="1"/>
+			<element name="referenciaFactura"  type="string" minOccurs="1" maxOccurs="1"/>
+			<element name="valorApagar"  type="string" minOccurs="1" maxOccurs="1"/>
+		</sequence>
+    </complexType>
+
+	<complexType name="usuario">
+		<sequence>
+			<element minOccurs="0" maxOccurs="1" name="tipo" type="string"/>
+			<element minOccurs="0" maxOccurs="1" name="numero" type="string"/>
+		</sequence>
+	</complexType> 
+	
+	<element name="respuestaRealizarRecaudo" type="tns:RespuestaRealizarRecaudo"/>
+    <complexType name="RespuestaRealizarRecaudo">
+    	<sequence>
+    		<element name="codigoRespuesta" type="string" minOccurs="0" maxOccurs="1"/>
+			<element name="descripcionRespuesta" type="string" minOccurs="0" maxOccurs="1"/>
+			<element name="referenciaFactura" type="string" minOccurs="0" maxOccurs="1"/>
+    	</sequence>    
+    </complexType>
+</schema>

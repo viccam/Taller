@@ -1,0 +1,130 @@
+BROKER SCHEMA modelamiento.operaciones
+
+/************************ COMENTARIO ESQL FLUJO **********************************
+ARCHIVO			  : ADPINT.esql							                         *
+OBJETIVO DEL FLUJO: Preparar la ruta para obtener la xsl con la que se realizara *
+la transaformacion                                                               * 
+**********************************************************************************/
+CREATE COMPUTE MODULE AdaptadorIntegracion_LoadAddressWSDLHTTPXSLT 
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		CALL CopyEntireMessage();
+		
+		--Referencia al mensaje de entrada
+		DECLARE refHeaderIn		REFERENCE TO InputRoot.XMLNSC.*:requestMessageIn.Header;
+		DECLARE refBodyIn		REFERENCE TO InputRoot.XMLNSC.*:requestMessageIn.Body;
+		
+		--Declaracion de variables
+		DECLARE nombreXSL					CHARACTER FIELDNAME(refBodyIn.*.*);
+		DECLARE dirXSLT						CHARACTER 'D:\Xslt\'; 
+		DECLARE nomPorpiedadEndPoint 		CHARACTER 'UrlService';
+		DECLARE nomPorpiedadEndPointHTTP 	CHARACTER 'UrlServiceHTTP';
+		DECLARE nomPorpiedadSOAPAct 		CHARACTER 'SOAPAction';
+		DECLARE nomPorpiedadTimeOut  		CHARACTER 'TimeoutADPINT';
+		DECLARE WS_SERVICE_URL				CHARACTER '';
+		DECLARE WS_SERVICE_URL_HTTP			CHARACTER '';
+		DECLARE WS_OPERACION_URL        	CHARACTER '';
+		DECLARE LEGACY_TIMEOUT 				CHARACTER '';
+
+		--Almacenamiento de variables
+		SET Environment.Variables.MensajeEntrada_WS		 = InputRoot;
+		SET Environment.Variables.Servicio.ServiceName	 = InputRoot.XMLNSC.*:requestMessageIn.Header.destination.name;
+		SET Environment.Variables.Servicio.OperationName = InputRoot.XMLNSC.*:requestMessageIn.Header.destination.operation;
+		SET Environment.Variables.Header				 = refHeaderIn;
+		SET Environment.Variables.Services 				 = ObtenerPropiedades(refHeaderIn, nomPorpiedadEndPoint, WS_SERVICE_URL);
+		SET Environment.Variables.ServicesHTTP			 = ObtenerPropiedades(refHeaderIn, nomPorpiedadEndPointHTTP, WS_SERVICE_URL_HTTP);
+		SET Environment.Variables.SOAPAction 			 = ObtenerPropiedades(refHeaderIn, nomPorpiedadSOAPAct, WS_OPERACION_URL);
+		SET Environment.Variables.LegacyTimeout 		 = ObtenerPropiedades(refHeaderIn, nomPorpiedadTimeOut, LEGACY_TIMEOUT);
+		
+		--Se configura nombre y codificacion xslt
+		SET OutputRoot.Properties.Encoding      	 = 546; 
+		SET OutputRoot.Properties.CodedCharSetId 	 = 1208; 
+		SET InputLocalEnvironment.XSL.StyleSheetName = dirXSLT||nombreXSL||'.xsl';
+		
+		SET Environment.Variables.nombreXslt		= InputLocalEnvironment.XSL.StyleSheetName;
+	
+		RETURN TRUE;
+	END;
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		CREATE FIELD OutputRoot.MQRFH2;
+		SET OutputRoot.XMLNSC = InputRoot.[<];
+	END;
+END MODULE;
+
+/************************ COMENTARIO ESQL MODULO *********************************
+OBJETIVO DEL MODULO: Transformar mensajería SOAP a canónico                      *
+**********************************************************************************
+DESCRIPCION	: En este módulo se crea el mensaje de respuesta canónica a partir   *
+              del mensaje de respuesta del servicio específico                   *
+*********************************************************************************/
+CREATE COMPUTE MODULE AdaptadorIntegracion_PrepareMessage
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN		
+		CALL CopyEntireMessage();
+		
+		DECLARE nombreXslt CHARACTER COALESCE(Environment.Variables.nombreXslt, '');
+		SET OutputRoot.Properties.Encoding           = 546; 
+		SET OutputRoot.Properties.CodedCharSetId     = 1208; 
+		SET InputLocalEnvironment.XSL.StyleSheetName = REPLACE(nombreXslt, 'Req_', 'Res_');
+		RETURN TRUE;
+	END;	
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		SET OutputRoot = InputRoot;
+	END;
+END MODULE;
+
+/************************ COMENTARIO ESQL MODULO *********************************
+OBJETIVO DEL MODULO: Borrar del environment vairables que no usan en caso de     *
+														respuesta exitosa  	     *
+**********************************************************************************
+DESCRIPCION	: Agrega expiración al mensaje que se pone en la cola OUT y borra    *
+				variables del Environment.                            			 * 
+*********************************************************************************/
+CREATE COMPUTE MODULE AdaptadorIntegracion__RemoveCacheAndEnv
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		
+		DECLARE RefEnv REFERENCE TO Environment.Variables;
+		SET OutputRoot.Properties 					= RefEnv.MensajeEntrada_WS.Properties;
+		SET OutputRoot.Properties.Encoding          = 546;
+		SET OutputRoot.Properties.CodedCharSetId    = 1208;
+		
+		SET OutputRoot.MQMD			 				= RefEnv.MensajeEntrada_WS.MQMD;
+	
+		--Crear campo y referencia Header de salida.
+		DECLARE ns	NAMESPACE 'http://javeriana.co/ents/common/BaseMessageFormat/V1';
+		
+		CREATE FIELD OutputRoot.XMLNSC.ns:responseMessageIn.Header;
+		DECLARE refHeaderOut 	REFERENCE TO OutputRoot.XMLNSC.ns:responseMessageIn.Header;
+		DECLARE refMensajeIn 	REFERENCE TO RefEnv.Header;
+		
+		SET refHeaderOut = refMensajeIn;	
+		SET refHeaderOut.responseStatus.statusCode = 'SUCCESS';
+		
+		SET OutputRoot.XMLNSC.ns:responseMessageIn.Body   = InputRoot.XMLNSC;				
+		
+		--Elimina Variables del Enrivonment
+		SET Environment.Variables.MensajeEntrada_WS 		= NULL; 
+		SET Environment.Variables.MensajeSalida_WS 	    	= NULL;
+		SET Environment.Variables.Services 					= NULL;
+		SET Environment.Variables.SOAPAction 				= NULL;
+		SET Environment.Variables.ServiceName 		    	= NULL;
+		SET Environment.Variables.OperationName 			= NULL;
+		SET InputLocalEnvironment.XSL 						= NULL;
+		SET InputLocalEnvironment.Destination.HTTP 		   	= NULL;
+		SET InputLocalEnvironment.Variables.soapActionName 	= NULL;
+		
+		--Referencia a la cabecera.
+ 		DECLARE refCallBackTo	REFERENCE TO refHeaderOut.routingStack.routeTo[1].CallBackTo;
+ 		
+		--Asigna Cola de respuesta.
+		SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = COALESCE(refCallBackTo.address, '');
+
+		RETURN TRUE;
+	END;
+	
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		SET OutputRoot = InputRoot;
+	END;
+
+END MODULE;

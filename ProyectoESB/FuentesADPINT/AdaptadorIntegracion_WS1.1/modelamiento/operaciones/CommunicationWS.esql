@@ -1,0 +1,124 @@
+BROKER SCHEMA modelamiento.operaciones
+
+
+/************************ COMENTARIO ESQL MODULO *********************************
+OBJETIVO DEL MODULO: Crear la solicitud http									 *
+**********************************************************************************
+DESCRIPCION	: En este módulo se crea la solicitud SOAP o un mensaje de solicitud *
+			  HTTP dependiendo del servicio										 * 
+*********************************************************************************/
+CREATE COMPUTE MODULE CommunicationWS_PrepareMessageRequest
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		--Copia Cabeceras.
+		CALL CopyMessageHeaders();
+		
+		--Referencia al mensaje de entrada
+		DECLARE refMsgIn	REFERENCE TO InputRoot.BLOB;
+		
+		--Declaracion de variables
+		DECLARE peticionHttp 		CHARACTER CAST( (SUBSTRING(refMsgIn.BLOB FROM 1 FOR 8)) AS CHARACTER CCSID 1208 ENCODING 546);
+		
+		--Validación de tipo de Peticion Si es HTTP o SOAP
+		IF(CONTAINS(peticionHttp, 'HTTP'))THEN
+		
+			SET Environment.Variables.tipoPeticion = 'HTTP';
+			
+			DECLARE datosPeticion		CHARACTER CAST(refMsgIn.BLOB AS CHARACTER CCSID 1208 ENCODING 546);
+			DECLARE lonDatos			INTEGER  LENGTH(datosPeticion);
+			DECLARE datos				CHARACTER SUBSTRING(datosPeticion FROM 5 FOR lonDatos);
+			DECLARE urlservicioHTTP		CHARACTER Environment.Variables.ServicesHTTP;
+			DECLARE urlPost				CHARACTER urlservicioHTTP||'/'||datos;
+			
+			--Conmfigura cabecera HTTP
+			SET OutputRoot.HTTPRequestHeader.Accept 		= 'application/xml';
+			SET OutputRoot.HTTPRequestHeader.Host 			= 'org.appsglobals.com:8080';
+			SET OutputRoot.HTTPRequestHeader."Content-Type" = 'application/json';
+			
+			--Construccion Query
+			SET OutputLocalEnvironment.Destination.HTTP.RequestURL = urlservicioHTTP||'/'||datos; 
+			--'http://org.appsglobals.com:8080/Workshop1-REST-Service-1.0-SNAPSHOT/servicios/pagos/v1/payments/123';
+
+		SET OutputRoot.JSON.Data.referenciaFactura = 'dsfsd';
+		
+		ELSE
+			SET Environment.Variables.tipoPeticion = 'SOAP';
+		
+			--Convierte mensaje BLOB a formato XMLNSC DE salida.
+			IF EXISTS(refMsgIn.BLOB[]) THEN
+			-- Crear un campo con el arbol XML convertido a BLOB
+			CREATE LASTCHILD OF OutputRoot DOMAIN ('XMLNSC') PARSE(refMsgIn.BLOB CCSID 1208 ENCODING 546);
+			END IF;
+			
+			SET InputLocalEnvironment.Variables.soapActionName 	= Environment.Variables.SOAPAction;
+			IF Environment.Variables.LegacyTimeout IS NULL OR Environment.Variables.LegacyTimeout = '' THEN
+				SET InputLocalEnvironment.Destination.HTTP.Timeout  = GET_TIMEOUT_WS;
+			ELSE
+				SET InputLocalEnvironment.Destination.HTTP.Timeout  = CAST(Environment.Variables.LegacyTimeout AS INTEGER);
+			END IF;
+			
+			SET Environment.Variables.MensajeEntradaWS.SOAPLegado = OutputRoot.XMLNSC;
+			SET InputLocalEnvironment.Destination.HTTP.RequestURL = Environment.Variables.Services;
+			
+			SET OutputLocalEnvironment = InputLocalEnvironment;
+		END IF;
+
+		RETURN TRUE;
+	END;	
+
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		SET OutputRoot = InputRoot;
+	END;
+	
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+	
+END MODULE;
+
+/************************ COMENTARIO ESQL MODULO *********************************
+OBJETIVO DEL MODULO: Preparar la respuesta								         *
+**********************************************************************************
+VERSION		: 1.0	                                                             *
+AUTOR		: David Cuadros  						                             *
+FECHA		: 2014/06/12                                                         *
+EMPRESA		: PRAGMA             		                                         *
+DESCRIPCION	: Prepara la respuesta												 * 
+*********************************************************************************/
+CREATE COMPUTE MODULE CommunicationWS_PrepareMessageResponse
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN		
+		DECLARE msgEntradaParaWS REFERENCE TO Environment.Variables.MensajeEntrada_WS;
+		CALL CopyMessageHeaders(msgEntradaParaWS);
+	
+		SET OutputRoot.XMLNSC = InputRoot.XMLNSC;
+
+		SET Environment.Variables.ResponseCode 			= COD_EXITOSO;
+		SET Environment.Variables.ResponseErrorDesc 	= DESC_EXITOSO;
+				
+		RETURN TRUE;
+	END;
+
+	CREATE PROCEDURE CopyMessageHeaders(IN oldInputRoot REFERENCE) BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(oldInputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = oldInputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+		
+		SET OutputRoot.Properties = InputRoot.Properties;
+		SET OutputRoot.HTTPRequestHeader  = NULL;
+		SET OutputRoot.HTTPResponseHeader = NULL;
+		IF(EXISTS(oldInputRoot.MQMD.*[])) THEN
+			SET OutputRoot.Properties.ReplyIdentifier = oldInputRoot.MQMD.CorrelId;
+		END IF;		
+	END;
+END MODULE;

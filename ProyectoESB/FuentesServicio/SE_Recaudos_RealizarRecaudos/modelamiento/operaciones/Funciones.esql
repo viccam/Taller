@@ -1,0 +1,46 @@
+BROKER SCHEMA modelamiento.operaciones
+
+
+--DECLARE ns NAMESPACE 'http://javeriana.co/ents/MessageDefinition/V1';
+ DECLARE ns NAMESPACE 'http://javeriana.co/ents/common/BaseMessageFormat/V1';
+/**************************************************************************************
+* PROCEDIMIENTO: AsignarListaDestinos *
+* OBJETIVO: Asigna por lista de destinos la cola a la que se enviara el mensaje *
+**************************************************************************************/
+CREATE PROCEDURE AsignarListaDestinos (IN nombreQ CHARACTER, INOUT refLocEnv REFERENCE )
+BEGIN
+	-- referencia al arbol de destino de MQ
+	CREATE FIELD refLocEnv.Destination.MQ.DestinationData;
+	DECLARE refDestQLocEnv REFERENCE TO refLocEnv.Destination.MQ.DestinationData[1];
+	-- Asinga nombre de cola destino.
+	SET refDestQLocEnv.queueName = COALESCE(nombreQ, '');
+END;
+
+CREATE FUNCTION Util_addCallbacktoRequest(IN roots REFERENCE, IN address CHAR,IN correlationId CHAR,IN messageId CHAR)
+BEGIN
+	--Valida si existe "header" antiguo.
+	IF(EXISTS(roots.XMLNSC.ns:requestMessageIn.header[]))THEN
+	CREATE FIRSTCHILD OF roots.XMLNSC.ns:requestMessageIn.header.routingStack NAME 'routeTo';
+	CREATE FIRSTCHILD OF roots.XMLNSC.ns:requestMessageIn.header.routingStack.routeTo NAME 'CallBackTo';
+	SET roots.XMLNSC.ns:requestMessageIn.header.routingStack.routeTo.CallBackTo[1].address = address;
+	SET roots.XMLNSC.ns:requestMessageIn.header.routingStack.routeTo.CallBackTo[1].messageId = messageId;
+	SET roots.XMLNSC.ns:requestMessageIn.header.routingStack.routeTo.CallBackTo[1].correlationId = correlationId;
+	--Valida si existe "Header" nuevo.
+ELSE
+	CREATE FIRSTCHILD OF roots.XMLNSC.ns:requestMessageIn.Header.routingStack NAME 'routeTo';
+	CREATE FIRSTCHILD OF roots.XMLNSC.ns:requestMessageIn.Header.routingStack.routeTo NAME 'CallBackTo';
+	SET roots.XMLNSC.ns:requestMessageIn.Header.routingStack.routeTo.CallBackTo[1].address = address;
+	SET roots.XMLNSC.ns:requestMessageIn.Header.routingStack.routeTo.CallBackTo[1].messageId = messageId;
+	SET roots.XMLNSC.ns:requestMessageIn.Header.routingStack.routeTo.CallBackTo[1].correlationId = correlationId;
+END IF;
+END;
+
+
+CREATE FUNCTION Util_removeCallBackResponse(IN roots REFERENCE)
+BEGIN
+	IF(EXISTS(roots.XMLNSC.ns:responseMessageIn.header[]))THEN
+	DELETE FIRSTCHILD OF roots.XMLNSC.ns:responseMessageIn.header.routingStack;
+ELSE
+	DELETE FIRSTCHILD OF roots.XMLNSC.ns:responseMessageIn.Header.routingStack;
+END IF;
+END;

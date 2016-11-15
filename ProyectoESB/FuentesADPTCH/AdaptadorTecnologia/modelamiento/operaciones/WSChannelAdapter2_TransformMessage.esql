@@ -1,0 +1,130 @@
+BROKER SCHEMA modelamiento.operaciones
+DECLARE ns21 NAMESPACE 'http://schemas.xmlsoap.org/soap/envelope/';
+DECLARE ns NAMESPACE 'http://javeriana.co/ents/common/BaseMessageFormat/V1';
+
+
+--Proccedimiento para cambiar de protocolo de SOAP a XML
+CREATE COMPUTE MODULE WSChannelAdapter2_TransformMessageOutMessageIn
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		--Almacenar informacion de properties de la peticion http
+		SET OutputRoot.Properties = InputRoot.Properties;
+		SET OutputRoot.MQMD		  = InputRoot.MQMD;
+		SET OutputRoot.MQMD.MsgId = InputRoot.MQMD.CorrelId;
+		
+		--Refencia del mensaje de entrada
+		DECLARE refMsgIn REFERENCE TO InputLocalEnvironment.SOAP.Envelope.SOAP;
+		DECLARE refHeaderIn REFERENCE TO refMsgIn.Header.ns:requestHeaderOut;
+		DECLARE refbody REFERENCE TO InputRoot.XMLNSC;
+
+		--Referencia al OutputLocalEnvironment y añade la información de entrada
+		DECLARE refLocEnv 		REFERENCE TO OutputLocalEnvironment;
+
+		--Creacion y Referenciacion del mensaje de salida
+		CREATE FIELD OutputRoot.MQRFH2;
+		CREATE FIELD Environment.Variables.MessageLog;
+
+		CREATE FIELD OutputRoot.XMLNSC.ns:requestMessageIn.Header;
+		DECLARE refHeaderOut REFERENCE TO OutputRoot.XMLNSC.ns:requestMessageIn.Header;
+		
+		CREATE FIELD OutputRoot.XMLNSC.ns:requestMessageIn.Body;
+		DECLARE refBodyOut REFERENCE TO OutputRoot.XMLNSC.ns:requestMessageIn.Body;
+		
+		-- Guarda informacion del mensaje en la cabezera header
+		SET refHeaderOut.systemId 			= refHeaderIn.systemId;
+		SET refHeaderOut.messageId 			= refHeaderIn.messageId;
+		SET refHeaderOut.invokerDateTime	= refHeaderIn.invokerDateTime;
+		SET refHeaderOut.securityCredential = refHeaderIn.securityCredential;
+		SET refHeaderOut.destination 		= refHeaderIn.destination;
+		SET refHeaderOut.classification 	= refHeaderIn.classification;
+		
+		CREATE LASTCHILD OF refHeaderOut NAME 'messageContext';
+		CREATE LASTCHILD OF refHeaderOut NAME 'routingStack';
+		CREATE LASTCHILD OF refHeaderOut NAME 'componentNameLogging';
+		
+		--Guarda datos del ReplyIdentifier del mensaje.
+		SET refHeaderOut.messageContext.property[1].key = 'SOAPReplyIdentifier';
+		SET refHeaderOut.messageContext.property[1].value = InputLocalEnvironment.Destination.SOAP.Reply.ReplyIdentifier;
+		
+		SET refHeaderOut.messageContext.property[2].key = 'TimeoutADPINT';
+		SET refHeaderOut.messageContext.property[2].value = '40';
+		
+		SET refHeaderOut.messageContext.property[3].key = 'UrlService';
+		SET refHeaderOut.messageContext.property[3].value = 'http://org.appsglobals.com:8080/Workshop1-SOAP-Service-1.0-SNAPSHOT/PagosServiceService';
+		
+		SET refHeaderOut.messageContext.property[4].key = 'UrlServiceHTTP';
+		SET refHeaderOut.messageContext.property[4].value = 'http://org.appsglobals.com:8080/Workshop1-REST-Service-1.0-SNAPSHOT/servicios/pagos/v1/payments';
+		
+		SET refHeaderOut.messageContext.property[5].key = 'SOAPAction';
+		SET refHeaderOut.messageContext.property[5].value = 'pagar';
+		
+		--Agrega cola para retornar respuesta
+		DECLARE corelId CHAR OutputRoot.MQMD.CorrelId;
+		DECLARE messgId CHAR OutputRoot.MQMD.MsgId;
+		
+		--Asigna la cola de salida para request
+		CALL AsignarListaDestinos('RECAUDOS.RRE.IN',refLocEnv);  
+		
+		--Asinga la cola de respuesta donde el adaptador retornara la respuesta.
+		CALL Util_addCallbacktoRequest(OutputRoot,'WSCHANNELADAPTER2.RESPONSE',corelId,messgId); 
+	
+		-- Se copia el mensaje
+		SET refBodyOut.request = InputRoot.XMLNSC;
+	
+		RETURN TRUE;
+	END;
+
+END MODULE;
+
+--Proccedimiento para cambiar de protocolo de XML a SOAP
+CREATE COMPUTE MODULE WSChannelAdapter2_GetSoapId
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		DECLARE SOAPReplyIdentifier BLOB;
+		SET OutputRoot = InputRoot;
+		
+		IF EXISTS (InputRoot.XMLNSC.*:responseMessageIn.Body.response[]) THEN
+			SET OutputRoot.XMLNSC = InputRoot.XMLNSC.*:responseMessageIn.Body.response;
+		ELSE
+			SET OutputRoot.XMLNSC = InputRoot.XMLNSC.*:responseMessageIn.Body;
+		END IF;
+		
+		-- Saca las propiedades y busca la que tenga el nombre SOAPReplyIdentifier
+		DECLARE inputArrayRef REFERENCE TO InputRoot.XMLNSC.ns:responseMessageIn.Header.messageContext.*[1];
+		WHILE LASTMOVE (inputArrayRef) DO
+			IF (inputArrayRef.key = 'SOAPReplyIdentifier') THEN
+				SET SOAPReplyIdentifier = inputArrayRef.value;
+				MOVE inputArrayRef LASTCHILD;
+			END IF;
+			
+			MOVE inputArrayRef NEXTSIBLING REPEAT TYPE NAME;  
+		END WHILE;
+		
+		--asignacion del soap replyIdentifier
+		SET OutputLocalEnvironment.Destination.SOAP.Reply.ReplyIdentifier = SOAPReplyIdentifier;
+		
+		-- crea el SOAP de respuesta
+		SET OutputRoot.SOAP.Header.ns:responseHeaderOut.systemId =InputRoot.XMLNSC.ns:responseMessageIn.Header.systemId;
+		SET OutputRoot.SOAP.Header.ns:responseHeaderOut.messageId = InputRoot.XMLNSC.ns:responseMessageIn.Header.messageId;
+		SET OutputRoot.SOAP.Header.ns:responseHeaderOut.invokerDateTime = InputRoot.XMLNSC.ns:responseMessageIn.Header.invokerDateTime;
+		SET OutputRoot.SOAP.Header.ns:responseHeaderOut.responseStatus.statusCode = InputRoot.XMLNSC.ns:responseMessageIn.Header.responseStatus.statusCode;
+		SET OutputRoot.SOAP.Header.ns:responseHeaderOut.destination = InputRoot.XMLNSC.ns:responseMessageIn.Header.destination;
+
+		IF InputRoot.XMLNSC.ns:responseMessageIn.Header.responseStatus.statusCode <> 'TECHNICALEXCEPTIONADPTHC' AND 
+		   InputRoot.XMLNSC.ns:responseMessageIn.Header.responseStatus.statusCode <> 'TECHNICALEXCEPTION' THEN
+			SET OutputRoot.SOAP.Body = InputRoot.XMLNSC.ns:responseMessageIn.Body.response;
+		ELSE
+			SET OutputLocalEnvironment.Destination.SOAP.Reply.Transport.HTTP.ReplyStatusCode = 500;
+			SET OutputRoot.SOAP.Body.ns21:Fault.faultcode = InputRoot.XMLNSC.ns:responseMessageIn.Body.exceptionList.exception[1].code;
+			SET OutputRoot.SOAP.Body.ns21:Fault.faultstring = InputRoot.XMLNSC.ns:responseMessageIn.Body.exceptionList.exception[1].description;
+			SET OutputRoot.SOAP.Body.ns21:Fault.detail.exceptionList= InputRoot.XMLNSC.ns:responseMessageIn.Body.exceptionList;
+			
+		END IF; 
+		
+		--Elimina la cabezera MQMD
+		SET OutputRoot.MQMD = NULL;
+		SET OutputRoot.XMLNSC = NULL;
+		
+		RETURN TRUE;
+	END;
+END MODULE;

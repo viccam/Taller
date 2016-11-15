@@ -1,0 +1,147 @@
+BROKER SCHEMA modelamiento.operaciones
+
+
+/************************ COMENTARIO ESQL MODULO *********************************
+OBJETIVO DEL MODULO: Prepara mensaje para ser validada la estructura             *
+**********************************************************************************
+VERSION		: 1.0	                                                             *
+FECHA		: 2016/11/14                                                         *
+*********************************************************************************/
+CREATE COMPUTE MODULE Recaudos_RealizarRecaudos_Req_PrepararMensajeValidacion
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		--Copia Cabeceras.
+		CALL CopyMessageHeaders();
+		
+		--Referencia al mensaje de entrada
+		DECLARE refHeaderIn		REFERENCE TO InputRoot.XMLNSC.nsESB:requestMessageIn.Header;
+		DECLARE refBodyIn		REFERENCE TO InputRoot.XMLNSC.nsESB:requestMessageIn.Body;
+		
+		--Referencia a Variables del Environment
+		CREATE FIELD Environment.Variables.Servicio;
+		DECLARE refEnvVar		REFERENCE TO Environment.Variables.Servicio;
+
+		--arma mensaje de salida para realizar validación.
+		SET OutputRoot.XMLNSC = refBodyIn.request;
+
+		--Almacena Header de la petición
+		SET	refEnvVar.Header = refHeaderIn;
+
+		--Indicar propiedad del Message Set
+		SET OutputRoot.Properties.MessageSet = NOMBRE_MESSAGESET;
+		
+		RETURN TRUE;
+	END;
+
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+
+END MODULE;
+
+/************************ COMENTARIO ESQL MODULO *********************************
+OBJETIVO DEL MODULO: Prepara mensaje para peticion hacia el legado, en este caso * 
+el legado puede ser consumido ya sea por SOAP, o por http. Para ello, se apoya en*
+la transformacion de mensajeria por medio de XSLT                                *
+**********************************************************************************
+VERSION		: 1.0	                                                             *
+FECHA		: 2016/11/14                                                         *
+*********************************************************************************/
+CREATE COMPUTE MODULE Recaudos_RealizarRecaudos_Req_PrepararPeticionWS
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		--Copia Cabeceras
+		CALL CopyMessageHeaders();
+
+		--Referencia a Variables del Environment
+		DECLARE refEnvVar		REFERENCE TO Environment.Variables;
+
+		--Referencia al OutputLocalEnvironment y añade la información de entrada
+		DECLARE refLocEnv 		REFERENCE TO OutputLocalEnvironment;
+		
+		--Referencia al mensaje de entrada
+		DECLARE refHeaderIn		REFERENCE TO refEnvVar.Servicio.Header;
+		DECLARE refBodyIn		REFERENCE TO InputRoot.XMLNSC.*:realizarRecaudo;
+		
+		--Declaracion de variable
+		DECLARE corelId 		CHARACTER OutputRoot.MQMD.CorrelId;
+        DECLARE messgId 		CHARACTER OutputRoot.MQMD.MsgId;
+        DECLARE numConvenio		CHARACTER 'Con'||CAST(refBodyIn.*:numeroConvenio AS CHARACTER);
+		DECLARE nombreOperacion	CHARACTER refHeaderIn.destination.operation;
+		DECLARE nombreServicio	CHARACTER refHeaderIn.destination.name;
+		DECLARE nombreContenedor CHARACTER 'Req_'||nombreServicio||'_'||nombreOperacion||'_'||numConvenio;
+					
+		--Crear campo y referencia Header de salida.
+		CREATE FIELD OutputRoot.XMLNSC.nsESB:requestMessageIn.Header;
+		DECLARE refHeaderOut 	REFERENCE TO OutputRoot.XMLNSC.nsESB:requestMessageIn.Header;
+		
+		--Transportar el Header de la envoltura.		
+		SET refHeaderOut = refHeaderIn;
+		declare c CHARACTER '';
+		--Se crea contenedor dinamico segun el numero de convenio para asi mismo aplicar posteriormente la transformacion para http o soap segun aplique
+		CREATE FIELD OutputRoot.XMLNSC.nsESB:requestMessageIn.Body.PeticionLegado.{nombreContenedor};
+		DECLARE refPeticionOut		REFERENCE TO OutputRoot.XMLNSC.nsESB:requestMessageIn.Body.PeticionLegado.{nombreContenedor}; 
+		
+		--Mapeo en formato canonico 
+		SET refPeticionOut.cuerpo.tipoIdentificacion		= refBodyIn.*:usuario.rec:tipo;
+		SET refPeticionOut.cuerpo.numeroIdentificacion		= refBodyIn.*:usuario.rec:numero;
+		SET refPeticionOut.cuerpo.numeroConvenio			= refBodyIn.*:numeroConvenio;
+		SET refPeticionOut.cuerpo.referenciaFactura			= refBodyIn.*:referenciaFactura;
+		SET refPeticionOut.cuerpo.valorAPagar				= refBodyIn.*:valorApagar;
+		
+		--Asigna la cola de salida para request
+		CALL AsignarListaDestinos(DESTINO_PETICION_ADP_WS,refLocEnv);  
+		
+		--Asinga la cola de respuesta donde el adaptador retornara la respuesta.
+		CALL Util_addCallbacktoRequest(OutputRoot,DESTINO_RESPUESTA_ADP_WS,corelId,messgId); 
+		
+		RETURN TRUE;
+	END;
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+END MODULE;
+
+/************************ COMENTARIO ESQL MODULO *********************************
+OBJETIVO DEL MODULO: Almacena en el environment la información que se requiere   *
+                     para obtener luego en la respuesta del servicio             *
+**********************************************************************************
+VERSION		: 1.0	                                                             *
+FECHA		: 2016/11/14                                                         *
+*********************************************************************************/
+CREATE COMPUTE MODULE Recaudos_RealizarRecaudos_Req_AlmacenarEnvironment
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		--Copia Cabeceras
+		CALL CopyMessageHeaders();
+		
+		--Referencia al environment
+		DECLARE refEnvVar	REFERENCE TO Environment.Variables;
+		
+		--Crea Arbol de salida 
+		SET OutputRoot.XMLNSC.EnvironmentMessage = refEnvVar;		
+		
+		RETURN TRUE;
+	END;
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+END MODULE;

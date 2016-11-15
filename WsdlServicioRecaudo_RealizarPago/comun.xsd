@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><xsd:schema elementFormDefault="unqualified" targetNamespace="http://javeriana.co/ents/common/BaseMessageFormat/V1" version="1.0" xmlns:bons1="http://javeriana.co/ents/common/BaseExtensions/V1.0" xmlns:tns="http://javeriana.co/ents/common/BaseMessageFormat/V1" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<xsd:import namespace="http://javeriana.co/ents/common/BaseExtensions/V1.0" schemaLocation="comunExt.xsd">
+	</xsd:import>
+	<xsd:element name="requestHeaderIn" type="tns:RequestHeaderIn"/>
+	<xsd:element name="requestHeaderOut" type="tns:RequestHeaderOut"/>
+	<xsd:element name="responseHeaderOut" type="tns:ResponseHeaderOut"/>
+	<xsd:element name="responseHeaderIn" type="tns:ResponseHeaderIn"/>
+	<xsd:complexType abstract="true" name="Header">
+		<xsd:sequence>
+			<xsd:element minOccurs="1" name="systemId" type="xsd:string"/>
+			<xsd:element minOccurs="1" name="messageId" type="xsd:string"/>
+			<xsd:element minOccurs="0" name="invokerDateTime" type="xsd:dateTime"/>
+
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="RequestHeaderIn">
+		<xsd:complexContent>
+			<xsd:extension base="tns:Header">
+				<xsd:sequence>
+					<xsd:element maxOccurs="1" minOccurs="0" name="securityCredential" type="bons1:SecurityCredential"/>
+					<xsd:element minOccurs="0" name="destination" type="bons1:Destination"/>
+					<xsd:element maxOccurs="1" minOccurs="0" name="classification" type="bons1:Classifications"/>
+					<xsd:element minOccurs="0" name="messageContext" type="bons1:MessageContext">
+					</xsd:element>
+					<xsd:element maxOccurs="1" minOccurs="1" name="routingStack" type="bons1:RoutingStack">
+					</xsd:element>
+					<xsd:element maxOccurs="1" minOccurs="0" name="componentNameLogging" type="xsd:string"/>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="RequestHeaderOut">
+		<xsd:complexContent>
+			<xsd:extension base="tns:Header">
+				<xsd:sequence>
+
+
+					<xsd:element minOccurs="0" name="securityCredential" type="bons1:SecurityCredential"/>
+					<xsd:element minOccurs="0" name="destination" type="bons1:Destination"/>
+					<xsd:element maxOccurs="1" minOccurs="0" name="classification" type="bons1:Classifications"/>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="ResponseHeaderOut">
+		<xsd:complexContent>
+			<xsd:extension base="tns:Header">
+				<xsd:sequence>
+					<xsd:element maxOccurs="1" minOccurs="1" name="responseStatus" type="bons1:ResponseStatus"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="destination" type="bons1:Destination"/>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="ResponseHeaderIn">
+		<xsd:complexContent>
+			<xsd:extension base="tns:Header">
+				<xsd:sequence>
+					<xsd:element maxOccurs="1" minOccurs="1" name="responseStatus" type="bons1:ResponseStatus"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="destination" type="bons1:Destination">
+					</xsd:element>
+					<xsd:element minOccurs="0" name="messageContext" type="bons1:MessageContext"/>
+					<xsd:element maxOccurs="1" minOccurs="1" name="routingStack" type="bons1:RoutingStack"/>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+
+	<xsd:element name="exceptionList" type="bons1:ExceptionList"></xsd:element>
+</xsd:schema>

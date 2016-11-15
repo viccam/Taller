@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wsdl:definitions 	name="Recaudo" 
+	targetNamespace="http://www.javeriana.com.co/services/Recaudo/" 
+	xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" 
+	xmlns:dat="http://www.javeriana.com.co/services/Recaudo/" 
+	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+	xmlns:xsd3="http://javeriana.co/ents/common/BaseExtensions/V1.0" 
+	xmlns:xsd2="http://javeriana.co/ents/common/BaseMessageFormat/V1" 
+	xmlns:xsd4="http://www.javeriana.com.co/recaudos">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://www.javeriana.com.co/recaudos/">
+      	<xsd:import namespace="http://www.javeriana.com.co/recaudos" 
+     	schemaLocation="Recaudo_RealizarPago.xsd">
+		</xsd:import>
+	</xsd:schema>
+	<xsd:schema>
+		<xsd:import
+   		namespace="http://javeriana.co/ents/common/BaseMessageFormat/V1"
+   		schemaLocation="comun.xsd">
+		</xsd:import>
+    </xsd:schema>
+    </wsdl:types>
+  <wsdl:message name="requestHeaderMsg">
+		<wsdl:part element="xsd2:requestHeaderOut" name="requestHeader"/>
+	</wsdl:message>
+  <wsdl:message name="responseHeaderMsg">
+		<wsdl:part element="xsd2:responseHeaderOut" name="responseHeader"/>
+  </wsdl:message>	  
+  <wsdl:message name="realizarRecaudoRequest">
+  	<wsdl:part name="parameters" element="xsd4:realizarRecaudo"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="realizarRecaudoResponse">
+  	<wsdl:part name="parameters" element="xsd4:respuestaRealizarRecaudo"></wsdl:part>
+  </wsdl:message>  
+  <wsdl:message name="exceptionList">
+		<wsdl:part name="error" element="xsd2:exceptionList"/>
+  </wsdl:message>
+  <wsdl:portType name="Recaudo">    
+    <wsdl:operation name="realizarRecaudo">
+    	<wsdl:input message="dat:realizarRecaudoRequest"></wsdl:input>
+    	<wsdl:output message="dat:realizarRecaudoResponse"></wsdl:output>
+            <wsdl:fault name="error" message="dat:exceptionList"></wsdl:fault>
+        </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="RecaudoSOAP" type="dat:Recaudo">
+  	<soap:binding style="document"
+  		transport="http://schemas.xmlsoap.org/soap/http" />  	
+  	<wsdl:operation name="realizarRecaudo">
+  		<soap:operation
+  			soapAction="http://www.javeriana.com.co/Recaudo/realizarRecaudo" />
+  		<wsdl:input>
+  			<soap:header message="dat:requestHeaderMsg"
+  				part="requestHeader" use="literal" />  		
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:header message="dat:responseHeaderMsg"
+  				part="responseHeader" use="literal" />  		
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  		<wsdl:fault name="error">
+  			<soap:fault use="literal" name="error" />
+  		</wsdl:fault>
+  	</wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="Recaudo">
+    <wsdl:port binding="dat:RecaudoSOAP" name="RecaudoSOAP">
+      <soap:address location="http://www.example.org/"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

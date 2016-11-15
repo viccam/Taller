@@ -1,0 +1,26 @@
+BROKER SCHEMA modelamiento.operaciones
+
+
+CREATE FUNCTION ObtenerPropiedades ( IN header REFERENCE, 
+									 IN nameProperty CHARACTER, 
+									 INOUT destinoPropiedad CHARACTER) RETURNS CHARACTER
+-- TODO: ObtenerPropiedades
+BEGIN
+	
+	DECLARE refMessageContext REFERENCE TO header.messageContext;
+	DECLARE messageContext ROW;
+    DECLARE keyProperty CHARACTER COALESCE(nameProperty, '');
+    DECLARE homolog CHARACTER;
+	
+    SET messageContext.property  = THE(
+           SELECT T.value
+           FROM refMessageContext.property[] AS T
+           WHERE T.key = keyProperty
+           );
+	
+   SET 	destinoPropiedad = COALESCE(messageContext.property.value, '');
+	
+	RETURN destinoPropiedad;
+END;
+
+
