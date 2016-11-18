@@ -1,0 +1,60 @@
+BROKER SCHEMA modelamiento.operaciones
+--PATH pichincha.commons.servicios;
+
+/************************ COMENTARIO ESQL MODULO *********************************
+OBJETIVO DEL MODULO: Prepara el mensaje de respuesta para el servicio            *
+**********************************************************************************
+VERSION		: 1.0	                                                             *
+FECHA		: 2016/11/14                                                         *
+*********************************************************************************/
+CREATE COMPUTE MODULE Recaudos_ConsultarRecaudos_Res_PrepararRespuesta
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		--Copia Cabeceras.
+		CALL CopyMessageHeaders();
+
+		--Referencias a mensajes de entrada del adaptador ODBC
+		DECLARE refHeaderIn  	REFERENCE TO InputRoot.XMLNSC.nsESB:responseMessageIn.Header;
+		DECLARE refRespIn 		REFERENCE TO InputRoot.XMLNSC.nsESB:responseMessageIn.Body.RespuestaLegado.*;
+
+		--Crear Header de salida
+		CREATE FIELD OutputRoot.XMLNSC.nsESB:responseMessageIn.Header;
+		DECLARE refHeaderOut REFERENCE TO OutputRoot.XMLNSC.nsESB:responseMessageIn.Header;
+		
+		--Crear campo y referencia al Body de salida.
+		CREATE FIELD OutputRoot.XMLNSC.nsESB:responseMessageIn.Body.response.rec:respuestaConsultarRecaudo;
+		DECLARE refPeticionOut	REFERENCE TO OutputRoot.XMLNSC.nsESB:responseMessageIn.Body.response.rec:respuestaConsultarRecaudo;
+				
+		--Declara Namespaces
+		SET refPeticionOut.(XMLNSC.NamespaceDecl)xmlns:rec = rec;
+	
+		--Mapeo de Header de salida.
+		SET refHeaderOut = refHeaderIn;
+		
+		--Mapeo de Body de Salida.
+		SET refPeticionOut.rec:codigoRespuesta		=	refRespIn.cabecera.codigoRta;
+		SET refPeticionOut.rec:descripcionRespuesta	=	refRespIn.cabecera.mensajeRta;
+		SET refPeticionOut.rec:referenciaFactura	=	refRespIn.cuerpo.referenciaFactura;
+		SET refPeticionOut.rec:valorApagar			=	refRespIn.cuerpo.valorFactura;
+	
+ 		--Elimina ultimo registro de enrriutamiento en el header.
+		CALL Util_removeCallBackResponse(OutputRoot);
+		
+		--Asigna Cola de respuesta.
+		DECLARE refCallBackTo		REFERENCE TO refHeaderOut.routingStack.routeTo[1].CallBackTo;
+		SET OutputLocalEnvironment.Destination.MQ.DestinationData[1].queueName = COALESCE(refCallBackTo.address, '');
+	
+		RETURN TRUE;
+	END;
+
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+
+END MODULE;

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>SE_Recaudos_RealizarRecaudos</name>
+	<name>SE_Recaudos_ConsultarRecaudos</name>
 	<comment></comment>
 	<projects>
 		<project>Motor_ConsultaReporteHTMLMsetLIB</project>

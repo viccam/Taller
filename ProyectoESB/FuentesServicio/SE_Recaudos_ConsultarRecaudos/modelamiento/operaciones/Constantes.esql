@@ -1,0 +1,11 @@
+BROKER SCHEMA modelamiento.operaciones
+
+
+--Declaración de nameSpaces
+DECLARE nsESB	NAMESPACE 'http://javeriana.co/ents/common/BaseMessageFormat/V1';
+DECLARE rec 	NAMESPACE 'http://www.javeriana.com.co/recaudos';
+
+--Declaración de UDPs
+DECLARE NOMBRE_MESSAGESET			EXTERNAL CHARACTER ' ';
+DECLARE DESTINO_PETICION_ADP_WS		EXTERNAL CHARACTER ' ';
+DECLARE DESTINO_RESPUESTA_ADP_WS	EXTERNAL CHARACTER ' ';

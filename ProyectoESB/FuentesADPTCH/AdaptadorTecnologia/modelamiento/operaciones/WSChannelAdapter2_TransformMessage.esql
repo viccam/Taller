@@ -42,28 +42,55 @@ CREATE COMPUTE MODULE WSChannelAdapter2_TransformMessageOutMessageIn
 		CREATE LASTCHILD OF refHeaderOut NAME 'routingStack';
 		CREATE LASTCHILD OF refHeaderOut NAME 'componentNameLogging';
 		
-		--Guarda datos del ReplyIdentifier del mensaje.
-		SET refHeaderOut.messageContext.property[1].key = 'SOAPReplyIdentifier';
-		SET refHeaderOut.messageContext.property[1].value = InputLocalEnvironment.Destination.SOAP.Reply.ReplyIdentifier;
+		--Simula el enrriquecimiento que haria una herramienta de gobernabilidad como el registry.
 		
-		SET refHeaderOut.messageContext.property[2].key = 'TimeoutADPINT';
-		SET refHeaderOut.messageContext.property[2].value = '40';
+		IF(refHeaderIn.destination.operation= 'RealizarPago')THEN
+			--Guarda datos del ReplyIdentifier del mensaje.
+			SET refHeaderOut.messageContext.property[1].key = 'SOAPReplyIdentifier';
+			SET refHeaderOut.messageContext.property[1].value = InputLocalEnvironment.Destination.SOAP.Reply.ReplyIdentifier;
+			
+			SET refHeaderOut.messageContext.property[2].key = 'TimeoutADPINT';
+			SET refHeaderOut.messageContext.property[2].value = '40';
+			
+			SET refHeaderOut.messageContext.property[3].key = 'UrlService';
+			SET refHeaderOut.messageContext.property[3].value = 'http://org.appsglobals.com:8080/Workshop1-SOAP-Service-1.0-SNAPSHOT/PagosServiceService';
+			
+			SET refHeaderOut.messageContext.property[4].key = 'UrlServiceHTTP';
+			SET refHeaderOut.messageContext.property[4].value = 'http://org.appsglobals.com:8080/Workshop1-REST-Service-1.0-SNAPSHOT/servicios/pagos/v1/payments';
+			
+			SET refHeaderOut.messageContext.property[5].key = 'SOAPAction';
+			SET refHeaderOut.messageContext.property[5].value = 'pagar';
+			
+			--Asigna la cola de salida para request
+			CALL AsignarListaDestinos('RECAUDOS.RRE.IN',refLocEnv); 
+			
+		ELSEIF(refHeaderIn.destination.operation= 'ConsultarPago')THEN
 		
-		SET refHeaderOut.messageContext.property[3].key = 'UrlService';
-		SET refHeaderOut.messageContext.property[3].value = 'http://org.appsglobals.com:8080/Workshop1-SOAP-Service-1.0-SNAPSHOT/PagosServiceService';
-		
-		SET refHeaderOut.messageContext.property[4].key = 'UrlServiceHTTP';
-		SET refHeaderOut.messageContext.property[4].value = 'http://org.appsglobals.com:8080/Workshop1-REST-Service-1.0-SNAPSHOT/servicios/pagos/v1/payments';
-		
-		SET refHeaderOut.messageContext.property[5].key = 'SOAPAction';
-		SET refHeaderOut.messageContext.property[5].value = 'pagar';
-		
+			--Guarda datos del ReplyIdentifier del mensaje.
+			SET refHeaderOut.messageContext.property[1].key = 'SOAPReplyIdentifier';
+			SET refHeaderOut.messageContext.property[1].value = InputLocalEnvironment.Destination.SOAP.Reply.ReplyIdentifier;
+			
+			SET refHeaderOut.messageContext.property[2].key = 'TimeoutADPINT';
+			SET refHeaderOut.messageContext.property[2].value = '40';
+			
+			SET refHeaderOut.messageContext.property[3].key = 'UrlService';
+			SET refHeaderOut.messageContext.property[3].value = 'http://org.appsglobals.com:8080/Workshop1-SOAP-Service-1.0-SNAPSHOT/PagosServiceService';
+			
+			SET refHeaderOut.messageContext.property[4].key = 'UrlServiceHTTP';
+			SET refHeaderOut.messageContext.property[4].value = 'http://org.appsglobals.com:8080/Workshop1-REST-Service-1.0-SNAPSHOT/servicios/pagos/v1/payments';
+			
+			SET refHeaderOut.messageContext.property[5].key = 'SOAPAction';
+			SET refHeaderOut.messageContext.property[5].value = 'consultar';
+			
+			--Asigna la cola de salida para request
+			CALL AsignarListaDestinos('RECAUDOS.CRE.IN',refLocEnv); 
+		END IF;
+			
 		--Agrega cola para retornar respuesta
 		DECLARE corelId CHAR OutputRoot.MQMD.CorrelId;
 		DECLARE messgId CHAR OutputRoot.MQMD.MsgId;
 		
-		--Asigna la cola de salida para request
-		CALL AsignarListaDestinos('RECAUDOS.RRE.IN',refLocEnv);  
+	 
 		
 		--Asinga la cola de respuesta donde el adaptador retornara la respuesta.
 		CALL Util_addCallbacktoRequest(OutputRoot,'WSCHANNELADAPTER2.RESPONSE',corelId,messgId); 

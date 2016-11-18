@@ -18,7 +18,7 @@ CREATE COMPUTE MODULE CommunicationWS_PrepareMessageRequest
 		
 		--Declaracion de variables
 		DECLARE peticionHttp 		CHARACTER CAST( (SUBSTRING(refMsgIn.BLOB FROM 1 FOR 8)) AS CHARACTER CCSID 1208 ENCODING 546);
-		
+	
 		--Validación de tipo de Peticion Si es HTTP o SOAP
 		IF(CONTAINS(peticionHttp, 'HTTP'))THEN
 		
@@ -30,16 +30,31 @@ CREATE COMPUTE MODULE CommunicationWS_PrepareMessageRequest
 			DECLARE urlservicioHTTP		CHARACTER Environment.Variables.ServicesHTTP;
 			DECLARE urlPost				CHARACTER urlservicioHTTP||'/'||datos;
 			
-			--Conmfigura cabecera HTTP
-			SET OutputRoot.HTTPRequestHeader.Accept 		= 'application/xml';
-			SET OutputRoot.HTTPRequestHeader.Host 			= 'org.appsglobals.com:8080';
-			SET OutputRoot.HTTPRequestHeader."Content-Type" = 'application/json';
+			--Validacion tipo Query GET
+			IF(CONTAINS(datos,'GET'))THEN
+			
+				SET OutputRoot.HTTPRequestHeader.Accept 		= 'application/xml';
+				SET OutputRoot.HTTPRequestHeader.Host 			= 'org.appsglobals.com:8080';
+				SET OutputRoot.HTTPRequestHeader."Content-Type" = 'application/xml';
+				--Construccion Query
+				SET OutputLocalEnvironment.Destination.HTTP.RequestLine.Method = 'GET'; 
+				SET OutputLocalEnvironment.Destination.HTTP.RequestURL = urlservicioHTTP||'/'||REPLACE(datos,'GET',''); 
+			ELSE
+				--Conmfigura cabecera HTTP
+				SET OutputRoot.HTTPRequestHeader.Accept 		= 'application/xml';
+				SET OutputRoot.HTTPRequestHeader.Host 			= 'org.appsglobals.com:8080';
+				SET OutputRoot.HTTPRequestHeader."Content-Type" = 'application/json';
+				--Construccion Query POST
+				SET OutputLocalEnvironment.Destination.HTTP.RequestURL = urlservicioHTTP||'/'||datos; 
+				SET OutputRoot.JSON.Data.referenciaFactura = 'd';
+			END IF;
+			
 			
 			--Construccion Query
-			SET OutputLocalEnvironment.Destination.HTTP.RequestURL = urlservicioHTTP||'/'||datos; 
+			--SET OutputLocalEnvironment.Destination.HTTP.RequestURL = urlservicioHTTP||'/'||datos; 
 			--'http://org.appsglobals.com:8080/Workshop1-REST-Service-1.0-SNAPSHOT/servicios/pagos/v1/payments/123';
 
-		SET OutputRoot.JSON.Data.referenciaFactura = 'dsfsd';
+		--SET OutputRoot.JSON.Data.referenciaFactura = 'dsfsd';
 		
 		ELSE
 			SET Environment.Variables.tipoPeticion = 'SOAP';

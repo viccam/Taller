@@ -240,7 +240,7 @@
       <xsd:element name="exception" type="tns:BaseException"/>
     </xsd:sequence>
   </xsd:complexType>
-</xsd:schema>]]></con:content><con:type>http://www.w3.org/2001/XMLSchema</con:type></con:part></con:definitionCache><con:endpoints><con:endpoint>http://localhost:7800//esb/channelAdapter/V3</con:endpoint></con:endpoints><con:operation isOneWay="false" action="http://www.javeriana.com.co/Recaudo/realizarRecaudo" name="realizarRecaudo" bindingOperationName="realizarRecaudo" type="Request-Response" inputName="" receivesAttachments="false" sendsAttachments="false" anonymous="optional"><con:settings/><con:call name="Exitoso"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://localhost:7800//esb/channelAdapter/V3</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://javeriana.co/ents/common/BaseMessageFormat/V1" xmlns:rec="http://www.javeriana.com.co/recaudos">
+</xsd:schema>]]></con:content><con:type>http://www.w3.org/2001/XMLSchema</con:type></con:part></con:definitionCache><con:endpoints><con:endpoint>http://localhost:7800//esb/channelAdapter/V3</con:endpoint></con:endpoints><con:operation isOneWay="false" action="http://www.javeriana.com.co/Recaudo/realizarRecaudo" name="realizarRecaudo" bindingOperationName="realizarRecaudo" type="Request-Response" inputName="" receivesAttachments="false" sendsAttachments="false" anonymous="optional"><con:settings/><con:call name="Exitoso"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://localhost:7800/esb/channelAdapter/V3</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://javeriana.co/ents/common/BaseMessageFormat/V1" xmlns:rec="http://www.javeriana.com.co/recaudos">
    <soapenv:Header>
       <v1:requestHeaderOut>
          <systemId>?</systemId>
@@ -258,9 +258,9 @@
             <rec:tipo>CC</rec:tipo>
             <rec:numero>1022341159</rec:numero>
          </rec:idCliente>
-         <rec:numeroConvenio>200</rec:numeroConvenio>
+         <rec:numeroConvenio>100</rec:numeroConvenio>
          <rec:referenciaFactura>123</rec:referenciaFactura>
          <rec:valorApagar>23000</rec:valorApagar>
       </rec:realizarRecaudo>
    </soapenv:Body>
-</soapenv:Envelope>]]></con:request><con:credentials><con:authType>Global HTTP Settings</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://www.javeriana.com.co/Recaudo/realizarRecaudo"/><con:wsrmConfig version="1.2"/></con:call></con:operation></con:interface><con:properties/><con:wssContainer/><con:databaseConnectionContainer/></con:soapui-project>
+</soapenv:Envelope>]]></con:request><con:credentials><con:authType>Global HTTP Settings</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://www.javeriana.com.co/Recaudo/realizarRecaudo"/><con:wsrmConfig version="1.2"/></con:call></con:operation></con:interface><con:properties/><con:wssContainer/><con:databaseConnectionContainer/><con:reporting><con:xmlTemplates/><con:parameters/></con:reporting></con:soapui-project>
