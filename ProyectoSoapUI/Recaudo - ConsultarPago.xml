@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<con:soapui-project activeEnvironment="Default" name="Recaudo_ConsultarPago" resourceRoot="" soapui-version="4.6.0" xmlns:con="http://eviware.com/soapui/config"><con:settings/><con:interface xsi:type="con:WsdlInterface" wsaVersion="NONE" name="RecaudoSOAP" type="wsdl" bindingName="{http://www.javeriana.com.co/services/Recaudo/}RecaudoSOAP" soapVersion="1_1" anonymous="optional" definition="file:/D:/EntregaModelamiento/WsdlServicioRecaudo_RealizarPago/Recaudo_ConsultarPago.wsdl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><con:settings/><con:definitionCache type="TEXT" rootPart="file:\D:\EntregaModelamiento\WsdlServicioRecaudo_RealizarPago\Recaudo_ConsultarPago.wsdl"><con:part><con:url>file:\D:\EntregaModelamiento\WsdlServicioRecaudo_RealizarPago\Recaudo_ConsultarPago.wsdl</con:url><con:content><![CDATA[<wsdl:definitions name="Recaudo" targetNamespace="http://www.javeriana.com.co/services/Recaudo/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:dat="http://www.javeriana.com.co/services/Recaudo/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsd3="http://javeriana.co/ents/common/BaseExtensions/V1.0" xmlns:xsd2="http://javeriana.co/ents/common/BaseMessageFormat/V1" xmlns:xsd4="http://www.javeriana.com.co/recaudos">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://www.javeriana.com.co/recaudos/">
+      <xsd:import namespace="http://www.javeriana.com.co/recaudos" schemaLocation="Recaudo_ConsultarPago.xsd"></xsd:import>
+    </xsd:schema>
+    <xsd:schema>
+      <xsd:import namespace="http://javeriana.co/ents/common/BaseMessageFormat/V1" schemaLocation="comun.xsd"></xsd:import>
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="requestHeaderMsg">
+    <wsdl:part element="xsd2:requestHeaderOut" name="requestHeader"/>
+  </wsdl:message>
+  <wsdl:message name="responseHeaderMsg">
+    <wsdl:part element="xsd2:responseHeaderOut" name="responseHeader"/>
+  </wsdl:message>
+  <wsdl:message name="consultarRecaudoRequest">
+    <wsdl:part name="parameters" element="xsd4:consultarRecaudo"/>
+  </wsdl:message>
+  <wsdl:message name="consultarRecaudoResponse">
+    <wsdl:part name="parameters" element="xsd4:respuestaConsultarRecaudo"/>
+  </wsdl:message>
+  <wsdl:message name="exceptionList">
+    <wsdl:part name="error" element="xsd2:exceptionList"/>
+  </wsdl:message>
+  <wsdl:portType name="Recaudo">
+    <wsdl:operation name="consultarRecaudo">
+      <wsdl:input message="dat:consultarRecaudoRequest"/>
+      <wsdl:output message="dat:consultarRecaudoResponse"/>
+      <wsdl:fault name="error" message="dat:exceptionList"/>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="RecaudoSOAP" type="dat:Recaudo">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="consultarRecaudo">
+      <soap:operation soapAction="http://www.javeriana.com.co/Recaudo/consultarRecaudo"/>
+      <wsdl:input>
+        <soap:header message="dat:requestHeaderMsg" part="requestHeader" use="literal"/>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:header message="dat:responseHeaderMsg" part="responseHeader" use="literal"/>
+        <soap:body use="literal"/>
+      </wsdl:output>
+      <wsdl:fault name="error">
+        <soap:fault use="literal" name="error"/>
+      </wsdl:fault>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="Recaudo">
+    <wsdl:port binding="dat:RecaudoSOAP" name="RecaudoSOAP">
+      <soap:address location="http://www.example.org/"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>]]></con:content><con:type>http://schemas.xmlsoap.org/wsdl/</con:type></con:part><con:part><con:url>file:\D:\EntregaModelamiento\WsdlServicioRecaudo_RealizarPago\Recaudo_ConsultarPago.xsd</con:url><con:content><![CDATA[<schema targetNamespace="http://www.javeriana.com.co/recaudos" elementFormDefault="qualified" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.javeriana.com.co/recaudos">
+  <element name="consultarRecaudo" type="tns:ConsultarRecaudo"/>
+  <complexType name="ConsultarRecaudo">
+    <sequence>
+      <element name="idCliente" type="tns:usuario" minOccurs="1" maxOccurs="1"/>
+      <element name="numeroConvenio" type="string" minOccurs="1" maxOccurs="1"/>
+      <element name="referenciaFactura" type="string" minOccurs="1" maxOccurs="1"/>
+    </sequence>
+  </complexType>
+  <complexType name="usuario">
+    <sequence>
+      <element minOccurs="0" maxOccurs="1" name="tipo" type="string"/>
+      <element minOccurs="0" maxOccurs="1" name="numero" type="string"/>
+    </sequence>
+  </complexType>
+  <element name="respuestaConsultarRecaudo" type="tns:RespuestaConsultarRecaudo"/>
+  <complexType name="RespuestaConsultarRecaudo">
+    <sequence>
+      <element name="codigoRespuesta" type="string" minOccurs="0" maxOccurs="1"/>
+      <element name="descripcionRespuesta" type="string" minOccurs="0" maxOccurs="1"/>
+      <element name="referenciaFactura" type="string" minOccurs="0" maxOccurs="1"/>
+      <element name="valorApagar" type="string" minOccurs="0" maxOccurs="1"/>
+    </sequence>
+  </complexType>
+</schema>]]></con:content><con:type>http://www.w3.org/2001/XMLSchema</con:type></con:part><con:part><con:url>file:\D:\EntregaModelamiento\WsdlServicioRecaudo_RealizarPago\comun.xsd</con:url><con:content><![CDATA[<xsd:schema elementFormDefault="unqualified" targetNamespace="http://javeriana.co/ents/common/BaseMessageFormat/V1" version="1.0" xmlns:bons1="http://javeriana.co/ents/common/BaseExtensions/V1.0" xmlns:tns="http://javeriana.co/ents/common/BaseMessageFormat/V1" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <xsd:import namespace="http://javeriana.co/ents/common/BaseExtensions/V1.0" schemaLocation="comunExt.xsd"></xsd:import>
+  <xsd:element name="requestHeaderIn" type="tns:RequestHeaderIn"/>
+  <xsd:element name="requestHeaderOut" type="tns:RequestHeaderOut"/>
+  <xsd:element name="responseHeaderOut" type="tns:ResponseHeaderOut"/>
+  <xsd:element name="responseHeaderIn" type="tns:ResponseHeaderIn"/>
+  <xsd:complexType abstract="true" name="Header">
+    <xsd:sequence>
+      <xsd:element minOccurs="1" name="systemId" type="xsd:string"/>
+      <xsd:element minOccurs="1" name="messageId" type="xsd:string"/>
+      <xsd:element minOccurs="0" name="invokerDateTime" type="xsd:dateTime"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="RequestHeaderIn">
+    <xsd:complexContent>
+      <xsd:extension base="tns:Header">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="0" name="securityCredential" type="bons1:SecurityCredential"/>
+          <xsd:element minOccurs="0" name="destination" type="bons1:Destination"/>
+          <xsd:element maxOccurs="1" minOccurs="0" name="classification" type="bons1:Classifications"/>
+          <xsd:element minOccurs="0" name="messageContext" type="bons1:MessageContext"></xsd:element>
+          <xsd:element maxOccurs="1" minOccurs="1" name="routingStack" type="bons1:RoutingStack"></xsd:element>
+          <xsd:element maxOccurs="1" minOccurs="0" name="componentNameLogging" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:complexType name="RequestHeaderOut">
+    <xsd:complexContent>
+      <xsd:extension base="tns:Header">
+        <xsd:sequence>
+          <xsd:element minOccurs="0" name="securityCredential" type="bons1:SecurityCredential"/>
+          <xsd:element minOccurs="0" name="destination" type="bons1:Destination"/>
+          <xsd:element maxOccurs="1" minOccurs="0" name="classification" type="bons1:Classifications"/>
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:complexType name="ResponseHeaderOut">
+    <xsd:complexContent>
+      <xsd:extension base="tns:Header">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="1" name="responseStatus" type="bons1:ResponseStatus"/>
+          <xsd:element maxOccurs="1" minOccurs="1" name="destination" type="bons1:Destination"/>
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:complexType name="ResponseHeaderIn">
+    <xsd:complexContent>
+      <xsd:extension base="tns:Header">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="1" name="responseStatus" type="bons1:ResponseStatus"/>
+          <xsd:element maxOccurs="1" minOccurs="1" name="destination" type="bons1:Destination"></xsd:element>
+          <xsd:element minOccurs="0" name="messageContext" type="bons1:MessageContext"/>
+          <xsd:element maxOccurs="1" minOccurs="1" name="routingStack" type="bons1:RoutingStack"/>
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:element name="exceptionList" type="bons1:ExceptionList"/>
+</xsd:schema>]]></con:content><con:type>http://www.w3.org/2001/XMLSchema</con:type></con:part><con:part><con:url>file:\D:\EntregaModelamiento\WsdlServicioRecaudo_RealizarPago\comunExt.xsd</con:url><con:content><![CDATA[<xsd:schema elementFormDefault="unqualified" targetNamespace="http://javeriana.co/ents/common/BaseExtensions/V1.0" version="1.0" xmlns:tns="http://javeriana.co/ents/common/BaseExtensions/V1.0" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <xsd:annotation></xsd:annotation>
+  <xsd:complexType name="Property">
+    <xsd:sequence>
+      <xsd:element name="key" type="xsd:string"/>
+      <xsd:element name="value" type="xsd:string"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="MessageContext">
+    <xsd:sequence>
+      <xsd:element maxOccurs="unbounded" minOccurs="1" name="property" type="tns:Property"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="SystemException">
+    <xsd:sequence>
+      <xsd:element name="faultcode" type="xsd:QName"/>
+      <xsd:element name="faultstring" type="xsd:string"/>
+      <xsd:element minOccurs="0" name="faultactor" type="xsd:anyURI"/>
+      <xsd:element minOccurs="0" name="detail" type="xsd:string"></xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="ResponseStatus">
+    <xsd:sequence>
+      <xsd:element default="SUCCESS" minOccurs="1" name="statusCode">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:string"/>
+        </xsd:simpleType>
+      </xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="SecurityCredential">
+    <xsd:sequence>
+      <xsd:element minOccurs="1" name="userName" type="xsd:string"/>
+      <xsd:element minOccurs="0" name="userToken" type="xsd:anyType"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="Destination">
+    <xsd:sequence>
+      <xsd:element maxOccurs="1" minOccurs="0" name="name" type="xsd:string"/>
+      <xsd:element maxOccurs="1" minOccurs="0" name="namespace" type="xsd:anyURI"/>
+      <xsd:element minOccurs="0" name="operation" type="xsd:string"></xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="Classifications">
+    <xsd:sequence>
+      <xsd:element maxOccurs="unbounded" minOccurs="1" name="classification" type="xsd:anyURI"></xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="BaseException">
+    <xsd:sequence>
+      <xsd:element name="code" type="xsd:string"/>
+      <xsd:element name="description" type="xsd:string"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="LoggingData">
+    <xsd:sequence>
+      <xsd:element minOccurs="1" name="sourceSystemId" type="xsd:string"></xsd:element>
+      <xsd:element default="ESB" minOccurs="1" name="destinationSystemId" type="xsd:string"></xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="EndPoint">
+    <xsd:sequence>
+      <xsd:element minOccurs="1" name="address" type="xsd:anyURI"></xsd:element>
+      <xsd:element minOccurs="0" name="correlationId" type="xsd:string"/>
+      <xsd:element minOccurs="0" name="messageId" type="xsd:string"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="RouteData">
+    <xsd:sequence>
+      <xsd:element minOccurs="1" name="CallBackTo" type="tns:EndPoint"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="RoutingStack">
+    <xsd:sequence>
+      <xsd:element maxOccurs="unbounded" minOccurs="0" name="routeTo" type="tns:RouteData"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="RequestBody">
+    <xsd:sequence>
+      <xsd:element name="request" type="xsd:anyType"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="ResponseBody">
+    <xsd:sequence>
+      <xsd:element name="response" type="xsd:anyType"/>
+      <xsd:element maxOccurs="unbounded" minOccurs="0" name="exceptionList" type="tns:ExceptionList"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="ExceptionList">
+    <xsd:sequence>
+      <xsd:element name="exception" type="tns:BaseException"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>]]></con:content><con:type>http://www.w3.org/2001/XMLSchema</con:type></con:part></con:definitionCache><con:endpoints><con:endpoint>http://www.example.org/</con:endpoint></con:endpoints><con:operation isOneWay="false" action="http://www.javeriana.com.co/Recaudo/consultarRecaudo" name="consultarRecaudo" bindingOperationName="consultarRecaudo" type="Request-Response" inputName="" receivesAttachments="false" sendsAttachments="false" anonymous="optional"><con:settings/><con:call name="Request 1"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://www.example.org/</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://javeriana.co/ents/common/BaseMessageFormat/V1" xmlns:rec="http://www.javeriana.com.co/recaudos">
+   <soapenv:Header>
+      <v1:requestHeaderOut>
+         <systemId>?</systemId>
+         <messageId>0001</messageId>
+        <destination>
+            <name>Recaudos</name>
+            <namespace>http://www.javeriana.com.co/services/recaudos/</namespace>
+            <operation>RealizarPago</operation>
+         </destination>
+      </v1:requestHeaderOut>
+   </soapenv:Header>
+   <soapenv:Body>
+      <rec:consultarRecaudo>
+         <rec:idCliente>
+            <rec:tipo>CC</rec:tipo>
+            <rec:numero>1022341159</rec:numero>
+         </rec:idCliente>
+         <rec:numeroConvenio>200</rec:numeroConvenio>
+         <rec:referenciaFactura>123</rec:referenciaFactura>
+      </rec:consultarRecaudo>
+   </soapenv:Body>
+</soapenv:Envelope>]]></con:request><con:credentials><con:authType>Global HTTP Settings</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://www.javeriana.com.co/Recaudo/consultarRecaudo"/><con:wsrmConfig version="1.2"/></con:call></con:operation></con:interface><con:properties/><con:wssContainer/><con:databaseConnectionContainer/></con:soapui-project>
